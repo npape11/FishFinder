@@ -22,6 +22,12 @@ app.get('/', (req, res) => {
     res.send('Welcome to FishFinder API');
 });
 
+app.get('/api/users', (req, res) => {
+    // Here you would typically fetch users from your database
+    // For now, let's return a mock response
+    res.json([{ id: 1, username: 'test_user', email: 'test@example.com' }]);
+});
+
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
