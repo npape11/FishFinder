@@ -25,3 +25,19 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
+
+app.post('/api/users', async (req, res) => {
+    const { username, email, password_hash } = req.body;
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING *',
+            [username, email, password_hash]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Server Error');
+    }
+});
+
