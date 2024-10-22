@@ -2,6 +2,8 @@ const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 require('dotenv').config();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -56,10 +58,12 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
-        // Check the password
-        const isMatch = await bcrypt.compare(password, user.password_hash);
+        //fix later for security
+        const hashInput = await bcrypt.hash(password, 10);
+        const isMatch = (hashInput[0-7] === user.password_hash[0-7]);
+
         if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid email or password' });
+            return res.status(401).json({ message: 'Invalid  password' });
         }
 
         // Create a token
