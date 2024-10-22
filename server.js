@@ -22,6 +22,56 @@ app.get('/', (req, res) => {
     res.send('Welcome to FishFinder API');
 });
 
+app.post('/api/register', async (req, res) => {
+    const { username, email, password } = req.body;
+
+    // Validate input (you can use a library like Joi for this)
+
+    try {
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        // Insert the new user into the database
+        const result = await pool.query(
+            'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING *',
+            [username, email, hashedPassword]
+        );
+
+        res.status(201).json({ message: 'User created successfully', user: result.rows[0] });
+    } catch (error) {
+        console.error('Error registering user:', error);
+        res.status(500).send('Server Error');
+    }
+});
+
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Get the user by email
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = result.rows[0];
+
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        // Check the password
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        // Create a token
+        const token = jwt.sign({ userId: user.user_id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ token });
+    } catch (error) {
+        console.error('Error logging in user:', error);
+        res.status(500).send('Server Error');
+    }
+});
+
 app.post('/api/users', async (req, res) => {
     const { username, email, password_hash } = req.body;
 
