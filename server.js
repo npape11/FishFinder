@@ -2,8 +2,9 @@ const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 require('dotenv').config();
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const authenticateToken = require('./middleware');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -58,9 +59,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
-        //fix later for security
-        const hashInput = await bcrypt.hash(password, 10);
-        const isMatch = (hashInput[0-7] === user.password_hash[0-7]);
+        const isMatch = await bcrypt.compare(password, user.password_hash)
 
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid  password' });
@@ -154,6 +153,10 @@ app.delete('/api/users/:id', async (req, res) => {
         console.error('Error deleting user:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
+});
+
+app.get('/api/protected', authenticateToken, (req, res) => {
+    res.json({ message: 'You have access to this protected route!', user: req.user });
 });
 
 app.listen(port, () => {
