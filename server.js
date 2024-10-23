@@ -3,7 +3,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
-const authenticateToken = require('./middleware');
+const authenticateToken = require('./middleware/authenticateToken');
 const bcrypt = require('bcrypt');
 
 const app = express();
