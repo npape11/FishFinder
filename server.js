@@ -32,7 +32,7 @@ app.post('/api/register', async (req, res) => {
 
     try {
         // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = bcrypt.hash(password, process.env.SALT_ROUNDS);
         
         // Insert the new user into the database
         const result = await pool.query(
@@ -47,33 +47,26 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
+// Login endpoint
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body; // Extract email and password from request body
 
     try {
-        // Get the user by email
+        // Fetch the user from the database
         const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         const user = result.rows[0];
 
-        if (!user) {
-            return res.status(401).json({ message: 'Invalid email or password' });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password_hash)
-
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid  password' });
-        }
-
-        // Create a token
-        const token = jwt.sign({ userId: user.user_id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        res.json({ token });
+        if (user && await bcrypt.compare(password, user.password_hash)) { // Check if user exists and if the password matches
+            const token = jwt.sign({ userId: user.user_id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' }); // Create a JWT with user ID and role
+            res.json({ token }); // Respond with the generated token
+        } 
+        else res.status(401).json({ message: 'Invalid email or password' }); // Respond with 401 if authentication fails
     } catch (error) {
-        console.error('Error logging in user:', error);
-        res.status(500).send('Server Error');
+        console.error('Error logging in:', error); // Log any errors
+        res.status(500).json({ message: 'Internal server error' }); // Respond with a 500 status if an error occurs
     }
 });
+
 
 app.post('/api/users', async (req, res) => {
     const { username, email, password_hash } = req.body;
