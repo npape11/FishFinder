@@ -25,14 +25,15 @@ app.get('/', (req, res) => {
     res.send('Welcome to FishFinder API');
 });
 
-app.post('/api/register', async (req, res) => {
+app.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
 
     // Validate input (you can use a library like Joi for this)
 
     try {
         // Hash the password
-        const hashedPassword = bcrypt.hash(password, process.env.SALT_ROUNDS);
+        const saltRounds = parseInt(process.env.SALT_ROUNDS, 10);
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
         
         // Insert the new user into the database
         const result = await pool.query(
@@ -68,7 +69,7 @@ app.post('/login', async (req, res) => {
 });
 
 
-app.post('/api/users', async (req, res) => {
+app.post('/users', async (req, res) => {
     const { username, email, password_hash } = req.body;
 
     try {
@@ -83,7 +84,7 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
-app.get('/api/users', async (req, res) => {
+app.get('/users', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM users');
         res.json(result.rows);
@@ -93,7 +94,7 @@ app.get('/api/users', async (req, res) => {
     }
 });
 
-app.get('/api/users/:id', async (req, res) => {
+app.get('/users/:id', async (req, res) => {
     const userId = req.params.id;
     try {
         const result = await pool.query('SELECT * FROM users WHERE user_id = $1', [userId]);
@@ -108,7 +109,7 @@ app.get('/api/users/:id', async (req, res) => {
     }
 });
 
-app.put('/api/users/:id', async (req, res) => {
+app.put('/users/:id', async (req, res) => {
     const userId = req.params.id;
     const { username, email, password_hash } = req.body;
     try {
@@ -128,7 +129,7 @@ app.put('/api/users/:id', async (req, res) => {
     }
 });
 
-app.delete('/api/users/:id', async (req, res) => {
+app.delete('/users/:id', async (req, res) => {
     const userId = req.params.id;
 
     try {
@@ -148,7 +149,7 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 });
 
-app.get('/api/protected', authenticateToken, (req, res) => {
+app.get('/protected', authenticateToken, (req, res) => {
     res.json({ message: 'You have access to this protected route!', user: req.user });
 });
 
